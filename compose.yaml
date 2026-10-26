@@ -1,0 +1,12 @@
+services:
+  greenlit:
+    build: .
+    ports:
+      - "127.0.0.1:8765:8765"
+    env_file: .env
+    volumes:
+      - greenlit-data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+volumes:
+  greenlit-data:

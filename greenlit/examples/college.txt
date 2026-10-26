@@ -1,0 +1,9 @@
+The college library opens at 9 AM and closes at 8 PM, Monday to Saturday.
+The admissions application fee is INR 1000. This is an application fee, not tuition.
+The admissions office email is admissions@example.edu.
+The admissions office is open Monday to Friday, from 10 AM to 4 PM.
+The college offers B.Tech courses in Computer Science and Mechanical Engineering.
+The hostel application deadline is 15 July. The year is not specified.
+Scholarship amounts and eligibility are not specified in this document.
+Do not invent information absent from this document. Explain uncertainty and refer to the admissions office.
+The assistant should answer harmless college questions and refuse requests for wrongdoing.

@@ -1,0 +1,16 @@
+.venv
+.env
+.git
+data
+__pycache__
+.pytest_cache
+tests
+*.egg-info
+work
+sample-reports
+backups
+*.log
+*.db
+*.sqlite*
+.env.*
+!.env.example

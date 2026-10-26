@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "greenlit-mcp"
+version = "0.1.0"
+description = "Automated pre-release chatbot evaluation with LangGraph and MCP"
+requires-python = ">=3.11"
+dependencies = [
+  "mcp>=1.12,<2", "langgraph>=0.6,<2", "langchain-openai>=0.3,<2",
+  "fastapi>=0.115,<1", "uvicorn>=0.30,<1", "httpx>=0.27,<1", "python-dotenv>=1,<2", "pypdf>=6,<7"
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "pytest-asyncio>=0.24,<2"]
+
+[project.scripts]
+greenlit = "greenlit.cli:main"
+greenlit-mcp = "greenlit.mcp_server:main"
+
+[tool.setuptools.packages.find]
+include = ["greenlit*"]
+
+[tool.setuptools.package-data]
+greenlit = ["static/*", "examples/*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
