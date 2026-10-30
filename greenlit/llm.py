@@ -21,16 +21,19 @@ def validate_model(model: str) -> str:
 
 
 def model_settings(judge: bool = False) -> dict:
+    from .pacing import interval_seconds
     key = os.getenv('GEMINI_API_KEY', '').strip()
     if not key:
         raise ValueError('GEMINI_API_KEY is missing. Run: python -m greenlit.cli configure-gemini')
     model = (os.getenv('JUDGE_MODEL') if judge else '') or os.getenv('GEMINI_MODEL', DEFAULT_MODEL)
     return {'model': validate_model(model), 'base_url': GEMINI_BASE_URL, 'api_key': key,
-            'temperature': 1, 'timeout': 60, 'max_retries': 0, 'max_tokens': 16000}
+            'temperature': 1, 'timeout': 60, 'max_retries': 0, 'max_tokens': 16000, 'request_interval_seconds': interval_seconds()}
 
 
 async def gemini_chat(system: str, messages: list[dict], schema: type[BaseModel], judge: bool = False):
     settings = model_settings(judge)
+    from .pacing import wait_turn, quota_message
+    await wait_turn(settings)
     model = settings['model']
     config = {'temperature': settings['temperature'], 'maxOutputTokens': settings['max_tokens'],
               'responseMimeType': 'application/json', 'responseJsonSchema': schema.model_json_schema()}
@@ -52,6 +55,8 @@ async def gemini_chat(system: str, messages: list[dict], schema: type[BaseModel]
     except httpx.HTTPError as exc:
         raise ValueError('GEMINI network request failed. Check connectivity to generativelanguage.googleapis.com.') from exc
     if response.status_code != 200:
+        if response.status_code == 429:
+            raise ValueError(quota_message(response))
         explanations = {400: 'request rejected; check model and API key type', 401: 'invalid credentials',
                         403: 'key or project lacks model access', 404: 'model unavailable',
                         429: 'quota or rate limit exceeded'}

@@ -16,14 +16,18 @@ def build_suggestions(cases, results):
     for row in results:
         j=row.get('judgment')
         if row.get('error') or row.get('evaluation_error'):
-            groups['connection'].append(row)
+            message = (str(row.get('error') or '') + ' ' + str(row.get('evaluation_error') or '')).lower()
+            groups['quota' if any(tag in message for tag in ['429','quota','rate limit']) else 'connection'].append(row)
         elif j and (j['verdict']!='pass' or any(m['status']=='fail' for m in j.get('risk_metrics',{}).values())):
             groups[row['category']].append(row)
     suggestions=[]
     for category,rows in groups.items():
-        if category=='connection':
+        if category=='quota':
+            prompt='Resolve the API quota issue before assessing prompts or changing the chatbot model.'
+            model='Check active model/project limits in Google AI Studio. Start with 6 questions, one trial and load testing off. The included target and evaluator share Gemini quota. Spacing helps request bursts; daily or zero quota requires quota availability.'
+        elif category=='connection':
             prompt='Check the target endpoint, response field, timeout and model service. Rerun the failed requests before changing the application prompt.'
-            model='Check local model availability and resources; an evaluation error is not evidence that a different target model is needed.'
+            model='Check API service availability, credentials and network access; an evaluation error is not evidence that a different target model is needed.'
         else:prompt,model=GUIDANCE[category]
         evidence=[{'case_id':r['case_id'],'trial':r['trial'],
             'finding':(r.get('judgment') or {}).get('reason') or r.get('error') or r.get('evaluation_error'),

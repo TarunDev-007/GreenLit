@@ -14,7 +14,7 @@ from greenlit.workflow import run_evaluation
 
 
 def request(url):
-    return RunRequest(purpose=demo.PURPOSE, reference=demo.REFERENCE, target={'url': url + '/demo/chat'}, test_count=12,rules={'require_full_coverage':False})
+    return RunRequest(purpose=demo.PURPOSE, reference=demo.REFERENCE, target={'url': url + '/demo/chat'}, test_count=12,repeats=2,rules={'require_full_coverage':False})
 
 
 async def execute(config):
@@ -190,6 +190,7 @@ def test_http_dashboard_job_download_baseline_and_origin(service):
         assert 'frame-ancestors' in page.headers['content-security-policy']
         config=client.get('/api/demo-config').json()
         config['test_count']=12
+        config['repeats']=2  # This test checks repeatability and an approved GO baseline.
         started=client.post('/api/runs',json=config)
         assert started.status_code==202
         run_id=started.json()['id']

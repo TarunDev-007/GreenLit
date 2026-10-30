@@ -65,8 +65,8 @@ class RunRequest(StrictModel):
     reference: str = Field(default="", max_length=50000)
     target: Target
     load_test: LoadTest = Field(default_factory=LoadTest)
-    test_count: int = Field(default=24, ge=6, le=60)
-    repeats: int = Field(default=2, ge=1, le=3)
+    test_count: int = Field(default=6, ge=6, le=60)
+    repeats: int = Field(default=1, ge=1, le=3)
     rules: Rules = Field(default_factory=Rules)
     compare_previous: bool = True
     baseline_id: str | None = Field(default=None, pattern=r"^[a-f0-9]{32}$")

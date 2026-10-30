@@ -280,7 +280,7 @@ async def run_chatbot_tests(target: dict, cases: list[dict], repeats: int = 2) -
 
 async def evaluate_answers(purpose: str, reference: str, cases: list[dict], observations: list[dict]) -> dict:
     lookup = {case['id']: case for case in cases}
-    semaphore = asyncio.Semaphore(3)
+    semaphore = asyncio.Semaphore(1)
     quota_exhausted=asyncio.Event()
 
     async def evaluate(observation):

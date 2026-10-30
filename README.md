@@ -23,7 +23,7 @@ All model inference uses Google's native Gemini `generateContent` API: planning,
 
 The default Gemini model is `gemini-3.5-flash-lite`. To choose another accessible Gemini model, use `configure-gemini --model MODEL_ID`. An optional `JUDGE_MODEL` must also be a Gemini model ID. Requests use a JSON response schema and local Pydantic validation; incomplete, blocked, malformed or quota-limited responses are errors, never passing scores. See [Gemini structured outputs](https://ai.google.dev/gemini-api/docs/generate-content/structured-output).
 
-Defaults are 24 questions and two trials. For a small first check, select six questions, one trial and leave load testing off. A quick run does not establish full risk coverage or repeatability. More questions and trials make additional API requests. Cloud calls require internet and model access; quotas and charges depend on the key's project and model. See [Gemini pricing](https://ai.google.dev/gemini-api/docs/pricing).
+Defaults are six questions, one trial and load testing off. Increase the count and trials explicitly when your project quota supports a larger evaluation. A quick run does not establish full risk coverage or repeatability. More questions and trials make additional API requests. Cloud calls require internet and model access; quotas and charges depend on the key's project and model. See [Gemini pricing](https://ai.google.dev/gemini-api/docs/pricing).
 
 For a live practice target, start **Start Math Chatbot.cmd** in another terminal, then use `http://127.0.0.1:9000/chat`, answer path `answer`, and `greenlit/examples/math-reference.md`. This separate chatbot also uses Gemini and consumes API quota. See [MATH-CHATBOT-TESTING.md](MATH-CHATBOT-TESTING.md). When target and judge share a model, errors can correlate; review judgments against independent reference answers.
 
@@ -107,3 +107,11 @@ Run `.\.venv\Scripts\python.exe -m pytest` to check the implementation. Automate
 The local dashboard has no multi-user authentication. It is bound to loopback. Keys are not stored in reports. Dataset/configuration hashes and model/package metadata are included for comparison. New generations are not guaranteed repeatable. Jobs are serial and interrupted runs are marked failed.
 
 Optional Gemini references: https://ai.google.dev/api/generate-content and https://ai.google.dev/gemini-api/docs/generate-content/thinking
+
+## Gemini rate limits
+
+Calls from the evaluator and included math API share a local SQLite pacing queue, keyed by a credential digest and model. The default interval is 13 seconds between request starts; change `GEMINI_REQUEST_INTERVAL_SECONDS` in `.env` to match your actual project limits. Zero disables pacing. A six-question math run typically needs at least 14 Gemini requests, so allow several minutes. Requests made by other applications or installations are not coordinated. Model judgments run sequentially. There are no automatic retries or provider fallbacks after quota failures.
+
+Spacing reduces bursts; it cannot increase daily or zero quotas, and does not guarantee compliance with token-based limits. Inspect your active limits in [Google AI Studio](https://aistudio.google.com/usage?tab=rate-limit). Error messages classify daily/zero quota and show provider retry guidance when supplied, without storing raw provider error content. A quota-interrupted run remains REVIEW with missing judgments. Historical reports retain their original settings and failures.
+
+Target end-to-end latency includes time spent waiting for the math server model slot. Keep latency criteria appropriate for the application you are testing; the limiter does not relax release gates. For repeatability tests use at least two trials.

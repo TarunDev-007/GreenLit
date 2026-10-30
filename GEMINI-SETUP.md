@@ -20,3 +20,5 @@ Keep the API key in your local `.env`. Do not put it in the target API URL, dash
 An empty key shows setup required. Invalid keys, missing model access, timeouts and exhausted quota stop inference with a visible error; the app does not substitute demo answers or another provider. Model listing alone does not confirm successful generation. Once a key is configured, a live probe is needed to verify access.
 
 See [Google's API key guide](https://ai.google.dev/gemini-api/docs/api-key) and [pricing](https://ai.google.dev/gemini-api/docs/pricing).
+
+The default is 6 questions, 1 trial and a 13-second shared interval between Gemini request starts. Set `GEMINI_REQUEST_INTERVAL_SECONDS` in `.env` according to your active Google project limits. Larger evaluations require more quota; creating another key in the same project does not provide separate limits.

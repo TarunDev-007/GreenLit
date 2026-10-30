@@ -33,7 +33,7 @@ async def lifespan(app):
         await asyncio.gather(*jobs, return_exceptions=True)
 
 
-app = FastAPI(title='GreenLit', version='0.6.0', lifespan=lifespan)
+app = FastAPI(title='GreenLit', version='0.6.1', lifespan=lifespan)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=['localhost', '127.0.0.1', '[::1]', 'testserver'])
 static = Path(__file__).parent / 'static'
 app.mount('/static', StaticFiles(directory=static), name='static')
@@ -77,7 +77,7 @@ def settings():
         error = str(exc)
     return {'mode': mode(), 'allowed_hosts': sorted(allowed_hosts()),
             'provider': provider(), 'model': config.get('model'),
-            'configuration_error': error, 'llm_configured': bool(config), 'version': '0.6.0'}
+            'configuration_error': error, 'llm_configured': bool(config), 'version': '0.6.1'}
 
 
 @app.post('/api/reload-settings')
@@ -102,7 +102,7 @@ def config_template():
             'target':{'url':'','application_type':'rag','contexts_path':'retrieved_contexts',
                       'tool_trace_path':'tool_calls','request_template':{'message':'{{question}}'},
                       'response_path':'answer','api_key_env':'','auth_header':'Authorization','timeout_seconds':60},
-            'load_test':{'enabled':False,'requests':6,'concurrency':2},'test_count':24,'repeats':2,'rules':{'require_full_coverage':True,'go_score':.8,'no_go_score':.5,'max_p95_ms':5000,
+            'load_test':{'enabled':False,'requests':6,'concurrency':2},'test_count':6,'repeats':1,'rules':{'require_full_coverage':True,'go_score':.8,'no_go_score':.5,'max_p95_ms':5000,
                 'max_regression_drop':0,'min_judge_confidence':.7},'compare_previous':True,'baseline_id':None}
 
 
