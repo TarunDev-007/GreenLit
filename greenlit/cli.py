@@ -16,42 +16,19 @@ def main():
     run.add_argument('--output', type=Path, default=Path('report.json'))
     configure = commands.add_parser('configure-gemini', help='Enter Gemini key privately and enable AI mode')
     configure.add_argument('--model', default='gemini-3.5-flash-lite')
-    local = commands.add_parser('configure-ollama', help='Use a local Ollama model without an API key')
-    local.add_argument('--model', default='llama3.2:3b')
     commands.add_parser('check-model', help='Make a small live request to verify model credentials')
     commands.add_parser('mcp', help='Run the stdio MCP server')
     args = parser.parse_args()
-    if args.command == 'configure-ollama':
-        import os
-        import re
-        from .config import ROOT
-        from .llm import model_settings
-        os.environ.update(LLM_PROVIDER='ollama',OLLAMA_MODEL=args.model,JUDGE_MODEL=args.model)
-        model_settings()  # Validate before writing settings.
-        path=ROOT/'.env'
-        path.touch(exist_ok=True)
-        contents=path.read_text(encoding='utf-8')
-        for name,value in {'MODE':'llm','LLM_PROVIDER':'ollama','OLLAMA_MODEL':args.model,
-                           'OLLAMA_BASE_URL':'http://127.0.0.1:11434','JUDGE_MODEL':args.model}.items():
-            line=f"{name}='{value}'"
-            pattern=rf'^\s*(?:export\s+)?{name}\s*=.*$'
-            contents=re.sub(pattern,lambda match:line,contents,flags=re.MULTILINE) if re.search(pattern,contents,re.MULTILINE) else contents.rstrip()+'\n'+line+'\n'
-        # OneDrive on Windows can block replacing .env via a temporary-file rename.
-        # Write this small local configuration in place, preserving other settings.
-        path.write_text(contents,encoding='utf-8')
-        print('Ollama configured: '+args.model+'. Restart GreenLit and the math chatbot to apply. No API key needed.')
-    elif args.command == 'configure-gemini':
+    if args.command == 'configure-gemini':
         import getpass
-        from dotenv import set_key
-        from .config import ROOT
-        key = getpass.getpass('Gemini API key (hidden): ').strip()
-        if not key:
-            parser.exit(1, 'No key entered. Configuration unchanged.\n')
-        path = ROOT / '.env'
-        path.touch(exist_ok=True)
-        for name, value in {'MODE':'llm', 'LLM_PROVIDER':'gemini', 'GEMINI_MODEL':args.model,
-                            'GEMINI_API_KEY':key, 'JUDGE_MODEL':args.model}.items():
-            set_key(str(path), name, value)
+        from .config import configure_gemini
+        from .llm import validate_model
+        try:
+            validate_model(args.model)
+            key = getpass.getpass('Gemini API key (hidden): ').strip()
+            configure_gemini(key, args.model)
+        except ValueError as exc:
+            parser.exit(1, str(exc) + '\n')
         # Reload the local dashboard without sending the key over HTTP.
         import httpx
         try:

@@ -106,7 +106,7 @@ async def run_evaluation(run_id: str, request: RunRequest) -> dict:
                   'plan': state['plan'], 'request': payload, 'dataset': state['dataset'], 'results': state['results'],
                   'mode': mode(), 'models': models, 'config_hash': digest({'request': payload, 'models': models}),
                   'mcp': {'transport': 'stdio', 'tools_discovered': tools.available, 'calls': tools.trace},
-                  'versions': {name: version(name) for name in ['mcp', 'langgraph', 'langchain-openai']},
+                  'versions': {name: version(name) for name in ['mcp', 'langgraph', 'httpx']},
                   'limitations': ['Automated judgments are fallible and not calibrated against human labels.',
                      'Passing this suite is evidence for these tests, not a safety certification.',
                      'Generated questions and their expected behaviours may share model bias.',

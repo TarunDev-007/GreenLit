@@ -26,3 +26,22 @@ def allowed_hosts() -> set[str]:
     return {h.strip().lower() for h in os.getenv(
         "ALLOWED_TARGET_HOSTS", "127.0.0.1,localhost,::1"
     ).split(",") if h.strip()}
+
+
+def configure_gemini(key: str, model: str) -> None:
+    """Save local settings in place; OneDrive can prevent dotenv's rename operation."""
+    import re
+    from .llm import validate_model
+    validate_model(model)
+    if not key.strip() or any(c in key for c in "\r\n'\\"):
+        raise ValueError('GEMINI_API_KEY must be a nonempty single-line API key')
+    path = ROOT / '.env'
+    contents = path.read_text(encoding='utf-8') if path.exists() else ''
+    changes = {'MODE': 'llm', 'LLM_PROVIDER': 'gemini', 'GEMINI_MODEL': model,
+               'GEMINI_API_KEY': key.strip(), 'JUDGE_MODEL': model}
+    for name, value in changes.items():
+        pattern = rf'^\s*(?:export\s+)?{name}\s*=.*$'
+        line = f"{name}='{value}'"
+        contents = re.sub(pattern, lambda match: line, contents, flags=re.MULTILINE) if re.search(pattern, contents, re.MULTILINE) else contents.rstrip() + '\n' + line + '\n'
+    path.write_text(contents, encoding='utf-8')
+    os.environ.update(changes)

@@ -1,6 +1,6 @@
 # Test the real math teaching chatbot
 
-This is a separate application whose answers are generated live by the configured model. In local mode it uses Ollama `llama3.2:3b` without an API key or cloud requests. It has no programmed answer fixtures. Start Ollama before starting the chatbot.
+This is a separate application whose answers are generated live by the configured model. It uses the Gemini model and API key configured in your local `.env`. It has no programmed answer fixtures. Configure your Gemini key before starting the chatbot.
 
 Start with `Start Math Chatbot.cmd` in your GreenLit project folder, or run `.\.venv\Scripts\python.exe -m greenlit.math_chatbot` from that folder.
 
@@ -13,7 +13,7 @@ In GreenLit:
 - Upload `greenlit/examples/math-reference.md` as the reference.
 - Request template: `{"message":"{{question}}"}`.
 - Multi-turn request template: `{"messages":"{{messages}}"}`.
-- Credential variable: empty; Ollama requires no API key.
+- Credential variable: empty for this local target; its server uses the Gemini key from `.env`.
 - Start with 6 questions and one trial; target timeout 120 seconds.
 - For the first run, leave load testing disabled. Enable the bounded load check explicitly when ready for extra requests.
 

@@ -55,16 +55,42 @@ async def test_graph_good_faulty_baseline_and_persistence(service):
 
 
 async def test_ai_mode_with_mock_provider(service, monkeypatch):
+    from greenlit import llm
+    from greenlit.models import TestPlan
     monkeypatch.setenv('MODE', 'llm')
-    monkeypatch.setenv('LLM_BASE_URL', service + '/v1')
-    monkeypatch.setenv('LLM_MODEL', 'mock')
-    monkeypatch.setenv('LLM_API_KEY', 'test-secret-never-store')
-    monkeypatch.setenv('JUDGE_MODEL', 'mock')
-    result = await execute(request(service))
-    assert result['decision']['verdict'] == 'GO'
-    assert result['mode'] == 'llm'
-    assert 'test-secret-never-store' not in json.dumps(result)
-    assert result['dataset']['source'].startswith('LLM-generated')
+    monkeypatch.setenv('GEMINI_API_KEY', 'test-secret-never-store')
+    actual = httpx.AsyncClient
+    calls = []
+    def handler(req):
+        assert req.url.host == 'generativelanguage.googleapis.com'
+        calls.append(str(req.url))
+        body = json.loads(req.content)
+        payload = json.loads(body['contents'][0]['parts'][0]['text'])
+        if payload.get('task') == 'plan_evaluation':
+            result = {'objective': demo.PURPOSE, 'application_risks': ['Wrong facts'],
+                      'categories': [{'category': c, 'focus': 'Check using reference'} for c in tools.CATEGORIES]}
+        elif 'count' in payload:
+            result = {'cases': demo.generate(payload['count'])}
+        else:
+            result = demo.judge(payload['case'], payload['answer'])
+        return httpx.Response(200, json={'candidates': [{'finishReason': 'STOP', 'content': {'parts': [{'text': json.dumps(result)}]}}]})
+    # Only Gemini inference is intercepted. Requests to the test target are real HTTP.
+    class Dispatch(httpx.AsyncBaseTransport):
+        def __init__(self): self.real = httpx.AsyncHTTPTransport()
+        async def handle_async_request(self, req):
+            if req.url.host == 'generativelanguage.googleapis.com': return handler(req)
+            return await self.real.handle_async_request(req)
+        async def aclose(self): await self.real.aclose()
+    monkeypatch.setattr(llm.httpx, 'AsyncClient', lambda **kw: actual(transport=Dispatch(), **kw))
+    plan = await tools.plan_evaluation(demo.PURPOSE, demo.REFERENCE)
+    dataset = await tools.generate_test_questions(demo.PURPOSE, demo.REFERENCE, 12, plan)
+    observations = await tools.run_chatbot_tests({'url': service + '/demo/chat'}, dataset['cases'], 2)
+    results = await tools.evaluate_answers(demo.PURPOSE, demo.REFERENCE, dataset['cases'], observations['observations'])
+    report = tools.generate_report(request(service).model_dump(), dataset, results['results'])
+    assert report['decision']['verdict'] == 'GO'
+    assert calls and len(calls) == 26
+    assert 'test-secret-never-store' not in json.dumps(report)
+    assert dataset['source'].startswith('LLM-generated')
 
 
 @pytest.mark.parametrize('path', ['/broken', '/malformed', '/redirect'])
@@ -82,7 +108,7 @@ async def test_bad_target_is_not_go(service, path):
 async def test_judge_failure_is_review(service, monkeypatch):
     observations = (await tools.run_chatbot_tests({'url':service+'/demo/chat'}, demo.generate(12), 2))['observations']
     monkeypatch.setenv('MODE', 'llm')
-    monkeypatch.delenv('LLM_MODEL', raising=False)
+    monkeypatch.delenv('GEMINI_API_KEY', raising=False)
     results = (await tools.evaluate_answers(demo.PURPOSE, demo.REFERENCE, demo.generate(12), observations))['results']
     report = tools.generate_report(request(service).model_dump(), {'dataset_hash':'test'}, results)
     assert report['decision']['verdict'] == 'REVIEW'

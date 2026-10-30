@@ -45,7 +45,7 @@ def safe_error(exc: Exception) -> str:
     if isinstance(exc,RuntimeError) and str(exc).startswith('MCP tool '):
         return str(exc)[:400]
     # Exceptions from HTTP/LLM SDKs can contain request content or credentials.
-    if isinstance(exc,ValueError) and str(exc).startswith(("GEMINI ","OLLAMA ")):
+    if isinstance(exc,ValueError) and str(exc).startswith(("GEMINI ",)):
         return str(exc)[:400]
     if isinstance(exc, ValueError):
         message = str(exc)

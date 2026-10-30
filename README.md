@@ -2,44 +2,32 @@
 
 GreenLit evaluates a user's LLM/chatbot, RAG application, or tool-using agent through its live API. The configured model plans tests, generates questions and expected behaviour, and judges actual responses. LangGraph coordinates the workflow, MCP exposes testing tools, and Python measures operations and applies release rules.
 
-## Local Ollama setup
+## Setup: Gemini only
 
-Install Python 3.11 or newer and Ollama. Open a terminal in the cloned `GreenLit` folder and set up the Python environment:
+Install Python 3.11 or newer, then open a terminal in the cloned GreenLit folder:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\setup.ps1
-```
-
-Alternatively, on Windows, double-click `Start GreenLit.cmd` to install dependencies and start the dashboard. On macOS/Linux, run `python3 -m venv .venv`, activate it, run `python -m pip install -r requirements.lock.txt`, then copy `.env.example` to `.env`. Use `python` in the commands below after activating the environment.
-
-The installed setup uses `LLM_PROVIDER=ollama` and `llama3.2:3b` for planning, short question generation and judging. Requests go directly to `http://127.0.0.1:11434/api/chat` with a JSON schema; no Gemini/OpenAI calls or API keys are used in this mode. LangGraph and MCP still coordinate the testing workflow.
-
-```powershell
-ollama serve
-# In another terminal (skip pull if the model is installed):
-ollama pull llama3.2:3b
-.\.venv\Scripts\python.exe -m greenlit.cli configure-ollama --model llama3.2:3b
+.\.venv\Scripts\python.exe -m greenlit.cli configure-gemini
 .\.venv\Scripts\python.exe -m greenlit.cli check-model
-```
-
-If Ollama is already running, leave that service running. Restart both GreenLit and the math chatbot after changing providers. `Use Ollama.cmd` configures local mode and checks inference.
-
-Local judging runs sequentially to limit memory pressure. The backend allows 300 seconds per model request; set the target timeout to 120 seconds for the included math API. Large inputs are rejected rather than silently trimming reference evidence. This integration uses a 16,384-token context and a conservative input budget; shorten long references if prompted. Latency thresholds remain your release criteria, so a slow local chatbot may correctly fail the latency gate.
-
-A 3B model can produce weak tests or inaccurate judgments. The same model powers the example math target and judge, which can share errors. Review evidence and use independently labelled cases for stronger validation. This is automated model-based assessment, not a guarantee of correctness or safety.
-
-## Start
-
-```powershell
-# Run from the cloned GreenLit folder, after setup:
 .\.venv\Scripts\python.exe -m greenlit.cli serve
 ```
 
-Open http://127.0.0.1:8765. The app starts with an empty application form, not a demo chatbot. Enter the purpose, API URL, request template and answer field path. Choose LLM/chatbot, RAG or agent. Upload PDF/TXT/Markdown reference information where relevant. Click Check model to verify actual generation, then Run evaluation.
+Enter your Gemini API key at the hidden terminal prompt. Alternatively, double-click **Set Gemini Key.cmd**, then **Start GreenLit.cmd**. The ignored `.env` file stores your key locally; `.env.example` contains no credentials. Existing target settings and saved reports are preserved.
 
-Optional cloud mode: use `configure-gemini` to enter a replacement key privately. Use `check-model` for a small live probe of the selected provider. Keys stay in the ignored `.env` file. Configuration reloads the local dashboard. Gemini mode calls Google's native `generateContent` endpoint; Ollama mode calls only the local Ollama endpoint.
+On macOS/Linux, create and activate a Python environment, install `requirements.lock.txt`, copy `.env.example` to `.env`, and use `python` for the module commands above.
 
-Production demo routes and fixture mode are disabled. The built-in fixtures remain available only to the automated tests through GREENLIT_TEST_FIXTURES=1. Do not enable this flag for real evaluations. Previous reports are retained as history and are not proof that the connected application passed.
+Open http://127.0.0.1:8765. Describe the application, supply its live API URL and matching request/answer paths, and upload reference information where relevant. Choose LLM/chatbot, RAG or agent. Click **Check model** to verify a real Gemini response, then **Run evaluation**.
+
+All model inference uses Google's native Gemini `generateContent` API: planning, question generation, answer judging, and the included math chatbot. Ollama and OpenAI inference are removed; there is no provider fallback. LangGraph orchestrates the stages and MCP exposes testing tools. Python measures latency/errors, applies release rules, compares runs and generates evidence-linked improvement guidance.
+
+The default Gemini model is `gemini-3.5-flash-lite`. To choose another accessible Gemini model, use `configure-gemini --model MODEL_ID`. An optional `JUDGE_MODEL` must also be a Gemini model ID. Requests use a JSON response schema and local Pydantic validation; incomplete, blocked, malformed or quota-limited responses are errors, never passing scores. See [Gemini structured outputs](https://ai.google.dev/gemini-api/docs/generate-content/structured-output).
+
+Defaults are 24 questions and two trials. For a small first check, select six questions, one trial and leave load testing off. A quick run does not establish full risk coverage or repeatability. More questions and trials make additional API requests. Cloud calls require internet and model access; quotas and charges depend on the key's project and model. See [Gemini pricing](https://ai.google.dev/gemini-api/docs/pricing).
+
+For a live practice target, start **Start Math Chatbot.cmd** in another terminal, then use `http://127.0.0.1:9000/chat`, answer path `answer`, and `greenlit/examples/math-reference.md`. This separate chatbot also uses Gemini and consumes API quota. See [MATH-CHATBOT-TESTING.md](MATH-CHATBOT-TESTING.md). When target and judge share a model, errors can correlate; review judgments against independent reference answers.
+
+Production demo routes and fixture mode are disabled. Bundled deterministic fixtures are used only by automated tests via `GREENLIT_TEST_FIXTURES=1`; do not enable it for real evaluations. Historical reports retain their original provider metadata. Changing evaluators starts a new comparison series.
 
 ## Regression and human approval
 
@@ -106,7 +94,7 @@ Enable the dashboard checkbox only for a test API where replayed requests, extra
 
 ## Reference uploads
 
-PDF, TXT and Markdown; maximum 10 MB, 100 PDF pages and 50,000 extracted characters. Scanned PDFs need OCR before upload. Encrypted PDFs are rejected. Source content, conversations and traces are untrusted data in model prompts. Reference text and target responses are sent to your configured provider (local Ollama in local mode); use material you are authorized to send.
+PDF, TXT and Markdown; maximum 10 MB, 100 PDF pages and 50,000 extracted characters. Scanned PDFs need OCR before upload. Encrypted PDFs are rejected. Source content, conversations and traces are untrusted data in model prompts. Reference text and target responses are sent to your configured provider (Google Gemini); use material you are authorized to send.
 
 ## MCP tools
 

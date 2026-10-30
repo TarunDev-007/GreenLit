@@ -1,4 +1,3 @@
-import os
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -66,8 +65,8 @@ class RunRequest(StrictModel):
     reference: str = Field(default="", max_length=50000)
     target: Target
     load_test: LoadTest = Field(default_factory=LoadTest)
-    test_count: int = Field(default_factory=lambda: 6 if os.getenv('LLM_PROVIDER','').lower()=='ollama' else 24, ge=6, le=60)
-    repeats: int = Field(default_factory=lambda: 1 if os.getenv('LLM_PROVIDER','').lower()=='ollama' else 2, ge=1, le=3)
+    test_count: int = Field(default=24, ge=6, le=60)
+    repeats: int = Field(default=2, ge=1, le=3)
     rules: Rules = Field(default_factory=Rules)
     compare_previous: bool = True
     baseline_id: str | None = Field(default=None, pattern=r"^[a-f0-9]{32}$")
@@ -84,14 +83,6 @@ class Case(StrictModel):
     question: str = Field(min_length=3, max_length=3000)
     expected_behavior: str = Field(min_length=1, max_length=3000)
     reference_evidence: str = Field(default="", max_length=5000)
-
-
-class LocalQuestion(StrictModel):
-    """Small generation contract for local models; metadata is added by Python."""
-    question: str = Field(min_length=3,max_length=3000)
-    expected_behavior: str = Field(min_length=1,max_length=3000)
-    reference_evidence: str = Field(default='',max_length=5000)
-    turns: list[str] = Field(default_factory=list,max_length=3)
 
 
 class GeneratedCases(StrictModel):

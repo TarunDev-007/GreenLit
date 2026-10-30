@@ -16,7 +16,10 @@ sys.path.insert(0, str(PROJECT))
 def isolated(monkeypatch, tmp_path):
     monkeypatch.setenv('MODE', 'demo')
     monkeypatch.setenv('GREENLIT_TEST_FIXTURES','1')
-    monkeypatch.setenv('LLM_PROVIDER', 'openai')
+    monkeypatch.setenv('LLM_PROVIDER', 'gemini')
+    monkeypatch.delenv('GEMINI_API_KEY', raising=False)
+    monkeypatch.setenv('GEMINI_MODEL', 'gemini-3.5-flash-lite')
+    monkeypatch.delenv('JUDGE_MODEL', raising=False)
     monkeypatch.setenv('GREENLIT_DATA_DIR', str(tmp_path / 'data'))
     monkeypatch.setenv('ALLOWED_TARGET_HOSTS', '127.0.0.1,localhost,::1')
     monkeypatch.delenv('TARGET_INPUT_PRICE_PER_MILLION', raising=False)
@@ -29,7 +32,7 @@ def service(tmp_path_factory):
         sock.bind(('127.0.0.1', 0))
         port = sock.getsockname()[1]
     directory = tmp_path_factory.mktemp('service')
-    env = {**os.environ, 'LLM_PROVIDER':'openai', 'MODE': 'demo', 'GREENLIT_TEST_FIXTURES':'1', 'GREENLIT_DATA_DIR': str(directory / 'data'),
+    env = {**os.environ, 'LLM_PROVIDER':'gemini', 'MODE': 'demo', 'GREENLIT_TEST_FIXTURES':'1', 'GREENLIT_DATA_DIR': str(directory / 'data'),
            'ALLOWED_TARGET_HOSTS': '127.0.0.1,localhost,::1', 'PYTHONPATH': str(PROJECT)}
     log = (directory / 'server.log').open('w', encoding='utf-8')
     process = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'tests.mock_service:app',
