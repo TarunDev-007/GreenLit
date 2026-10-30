@@ -25,10 +25,10 @@ let retrieval=null,agent=null;if(r.application_type==='rag'){const group=text('d
 function riskChecksCard(checks){
   const panel=card('Quality, safety & operations','EVALUATION RESULTS');
   panel.id='risk-checks';
-  const measured=[],missing=[],outside=[];
+  const measured=[],missing=[];
   for(const entry of Object.entries(checks||{})){
     const status=entry[1]?.status;
-    if(status==='not_applicable')outside.push(entry);
+    if(status==='not_applicable')continue;
     else if(['pass','fail','measured'].includes(status))measured.push(entry);
     else missing.push(entry);
   }
@@ -36,25 +36,13 @@ function riskChecksCard(checks){
   function row([name,item]){
     const detail=text('details','','test-case'),title=text('summary',name.replaceAll('_',' '));
     const status=item?.status||'not_measured';
-    const label={pass:'Pass',fail:'Fail',measured:'Measured',not_measured:'Not assessed',not_applicable:'Not applicable'}[status]||status.replaceAll('_',' ');
+    const label={pass:'Pass',fail:'Fail',measured:'Measured'}[status];
     title.append(text('span',label,status==='pass'?'pass-text':status==='fail'?'fail-text':''));
     detail.append(title,text('p',JSON.stringify(item,null,2),'hint'));
     return detail;
   }
   for(const entry of measured)panel.append(row(entry));
-  if(!measured.length)panel.append(text('p','No checks produced results in this run. Open the details below to see what is missing.','hint'));
-  if(missing.length){
-    const group=text('details','','risk-group');
-    group.append(text('summary',`Checks without results (${missing.length})`),text('p','These checks have insufficient evidence in this run. They still count toward coverage and release requirements.','hint'));
-    for(const entry of missing)group.append(row(entry));
-    panel.append(group);
-  }
-  if(outside.length){
-    const group=text('details','','risk-group');
-    group.append(text('summary',`Other application checks (${outside.length})`),text('p','These checks do not apply to the selected application type.','hint'));
-    for(const entry of outside)group.append(row(entry));
-    panel.append(group);
-  }
+  if(!measured.length)panel.append(text('p','No checks produced measurable results in this run. Full coverage information is available in the downloaded report.','hint'));
   return panel;
 }
 
